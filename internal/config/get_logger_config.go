@@ -2,13 +2,6 @@ package config
 
 import "cryptoPulse/internal/utils"
 
-type LoggerConfig struct {
-	Environment string
-	ServiceName string
-	Version     string
-	LogLevel    string
-}
-
 func GetLoggerConfig() LoggerConfig {
 	environment := utils.GetEnv("APP_ENV", "development1")
 	serviceName := utils.GetEnv("SERVICE_NAME", "crypto-collector1")

@@ -1,0 +1,23 @@
+app:
+  name: cryptopulse
+  environment: development
+
+server:
+  port: 8080
+
+database:
+  host: localhost
+  port: 5434
+  user: postgres
+  password: postgres
+  name: cryptopulse
+
+redis:
+  host: localhost
+  port: 6379
+
+logger:
+  environment: development
+  serviceName: cryptopulse
+  version: 1.0.0
+  logLevel: debug
