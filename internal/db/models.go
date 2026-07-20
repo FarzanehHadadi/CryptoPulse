@@ -8,6 +8,21 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Candle struct {
+	ID         int32
+	Symbol     string
+	OpenPrice  pgtype.Numeric
+	ClosePrice pgtype.Numeric
+	LowPrice   pgtype.Numeric
+	HighPrice  pgtype.Numeric
+	Interval   string
+	Volume     pgtype.Numeric
+	CreatedAt  pgtype.Timestamp
+	OpenTime   pgtype.Timestamp
+	CloseTime  pgtype.Timestamp
+	IsClosed   bool
+}
+
 type Symbol struct {
 	ID         int64
 	Exchange   string
