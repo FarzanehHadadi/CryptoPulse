@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"cryptoPulse/internal/collector"
 	"cryptoPulse/internal/config"
 	"cryptoPulse/internal/database"
 	"cryptoPulse/internal/db"
@@ -47,21 +48,18 @@ func main() {
 	logger.Info("Database pinged successfully")
 	//***********init repository*************//
 	queries := db.New(pool)
-	repo := repository.NewRepository(queries)
-	symbols, err := repo.Symbols.GetSymbols()
-	if err != nil {
-		panic(err)
-	}
-	logger.Info("Symbols fetched successfully", "symbols", symbols)
+	repo := repository.NewRepository(queries, pool)
+
 	binanceClient := binanceEx.NewClient("", "")
-	logger.Info("Binance client initialized successfully", "binanceClient", binanceClient)
-	candles, err := binanceClient.GetCandles(context.Background(), exchange.CandleRequest{
+	collectorService := collector.NewService(repo, binanceClient)
+	err = collectorService.CollectCandles(context.Background(), exchange.CandleRequest{
 		Symbol:   "BTCUSDT",
 		Interval: "1m",
-		Limit:    1,
+		Limit:    100,
 	})
+
 	if err != nil {
 		panic(err)
 	}
-	logger.Info("Candles fetched successfully", "candles", candles)
+
 }

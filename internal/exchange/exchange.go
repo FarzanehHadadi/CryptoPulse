@@ -6,7 +6,7 @@ import (
 )
 
 type Exchange interface {
-	GetSymbols() ([]string, error)
+	// GetSymbols() ([]string, error)
 	GetCandles(ctx context.Context, request CandleRequest) ([]domain.Candle, error)
 }
 
