@@ -1,0 +1,13 @@
+scheduler:
+  workers: 10
+  jobs:
+    - name: "BTCUSDT"
+      candleRequest:
+        symbol: "BTCUSDT"
+        interval: "1m"
+        limit: 10
+    - name: "ETHUSDT"
+      candleRequest:
+        symbol: "ETHUSDT"
+        interval: "1m"
+        limit: 10

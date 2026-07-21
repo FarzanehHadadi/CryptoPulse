@@ -9,7 +9,6 @@ import (
 
 func Load() (*Config, error) {
 
-	// فقط برای Development
 	_ = godotenv.Load()
 
 	v := viper.New()
@@ -20,6 +19,15 @@ func Load() (*Config, error) {
 
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	v.AutomaticEnv()
+	v.SetConfigName("config")
+	if err := v.ReadInConfig(); err != nil {
+		return nil, err
+	}
+
+	v.SetConfigName("scheduler")
+	if err := v.MergeInConfig(); err != nil {
+		return nil, err
+	}
 
 	if err := v.ReadInConfig(); err != nil {
 		return nil, err

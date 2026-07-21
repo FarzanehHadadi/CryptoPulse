@@ -6,11 +6,14 @@ import (
 	"cryptoPulse/internal/config"
 	"cryptoPulse/internal/database"
 	"cryptoPulse/internal/db"
-	"cryptoPulse/internal/exchange"
 	"cryptoPulse/internal/exchanges/binanceEx"
 	"cryptoPulse/internal/logger"
 	"cryptoPulse/internal/repository"
+	"cryptoPulse/internal/scheduler"
 	"log/slog"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/joho/godotenv"
 )
@@ -52,14 +55,13 @@ func main() {
 
 	binanceClient := binanceEx.NewClient("", "")
 	collectorService := collector.NewService(repo, binanceClient)
-	err = collectorService.CollectCandles(context.Background(), exchange.CandleRequest{
-		Symbol:   "BTCUSDT",
-		Interval: "1m",
-		Limit:    100,
-	})
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 
-	if err != nil {
-		panic(err)
+	sched := scheduler.NewScheduler(collectorService, cfg.Scheduler.Workers)
+	logger.Info("scheduler started", "workers", cfg.Scheduler)
+	if err := sched.Start(ctx); err != nil {
+		logger.Error("scheduler start failed", "error", err)
 	}
 
 }
