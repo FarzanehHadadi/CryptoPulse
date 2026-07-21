@@ -57,11 +57,10 @@ func main() {
 	collectorService := collector.NewService(repo, binanceClient)
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-
-	sched := scheduler.NewScheduler(collectorService, cfg.Scheduler.Workers)
-	logger.Info("scheduler started", "workers", cfg.Scheduler)
-	if err := sched.Start(ctx); err != nil {
-		logger.Error("scheduler start failed", "error", err)
+	jobs := scheduler.JobsFromConfig(cfg.Scheduler) // or inline map
+	sched := scheduler.NewScheduler(collectorService, jobs, cfg.Scheduler.Workers)
+	if err := sched.Start(ctx); err != nil && err != context.Canceled {
+		logger.Error("scheduler stopped", "error", err)
 	}
 
 }
