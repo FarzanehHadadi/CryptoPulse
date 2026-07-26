@@ -49,7 +49,62 @@ func (r *candlesRepository) CreateCandles(ctx context.Context, candles []domain.
 }
 func decimalToNumeric(d decimal.Decimal) pgtype.Numeric {
 	var n pgtype.Numeric
-_:
-	n.Scan(d.String())
+	_ = n.Scan(d.String())
 	return n
+}
+
+func (r *candlesRepository) GetLastCandleBySymbol(ctx context.Context, symbol string, interval string) (*domain.Candle, error) {
+	candle, err := r.query.GetLastCandleBySymbol(ctx, db.GetLastCandleBySymbolParams{
+		Symbol:   symbol,
+		Interval: interval,
+	})
+	if err != nil {
+		return nil, err
+	}
+	open, err := numericToDecimal(candle.OpenPrice)
+	if err != nil {
+		return nil, err
+	}
+	high, err := numericToDecimal(candle.HighPrice)
+	if err != nil {
+		return nil, err
+	}
+	low, err := numericToDecimal(candle.LowPrice)
+	if err != nil {
+		return nil, err
+	}
+	closePrice, err := numericToDecimal(candle.ClosePrice)
+	if err != nil {
+		return nil, err
+	}
+	volume, err := numericToDecimal(candle.Volume)
+	if err != nil {
+		return nil, err
+	}
+	return &domain.Candle{
+		ID:        candle.ID,
+		Symbol:    candle.Symbol,
+		Interval:  candle.Interval,
+		Open:      open,
+		High:      high,
+		Low:       low,
+		Close:     closePrice,
+		Volume:    volume,
+		OpenTime:  candle.OpenTime.Time,
+		CloseTime: candle.CloseTime.Time,
+	}, nil
+}
+func numericToDecimal(n pgtype.Numeric) (decimal.Decimal, error) {
+	if !n.Valid {
+		return decimal.Zero, nil
+	}
+	v, err := n.Value()
+	if err != nil {
+		return decimal.Zero, err
+	}
+	s, ok := v.(string)
+	if !ok {
+		return decimal.Zero, nil
+	}
+	return decimal.NewFromString(s)
 }

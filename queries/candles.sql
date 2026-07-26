@@ -32,3 +32,11 @@ VALUES
         open_time
     )
     DO NOTHING;
+
+-- name: GetLastCandleBySymbol :one
+SELECT *
+FROM candles
+WHERE symbol = $1
+  AND interval = $2
+ORDER BY open_time DESC
+LIMIT 1;

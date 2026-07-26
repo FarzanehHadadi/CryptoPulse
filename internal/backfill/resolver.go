@@ -13,6 +13,14 @@ type Range struct {
 
 // missing: 12:01 → 12:14
 func (r *Resolver) Resolve(lastCandle time.Time, now time.Time, interval time.Duration) Range {
-	return Range{}
 	//get first time after lastCandle + interval and last time before now - interval
+	fromTime := lastCandle.Add(interval)
+	toTime := now.Add(-interval)
+	if fromTime.After(toTime) {
+		return Range{From: fromTime, To: fromTime} // empty
+	}
+	return Range{
+		From: fromTime,
+		To:   toTime,
+	}
 }

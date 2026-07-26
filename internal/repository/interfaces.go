@@ -15,4 +15,5 @@ type Symbols interface {
 }
 type Candles interface {
 	CreateCandles(ctx context.Context, candles []domain.Candle) error
+	GetLastCandleBySymbol(ctx context.Context, symbol string, interval string) (*domain.Candle, error)
 }

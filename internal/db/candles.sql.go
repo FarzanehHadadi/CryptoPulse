@@ -4,3 +4,41 @@
 // source: candles.sql
 
 package db
+
+import (
+	"context"
+)
+
+const getLastCandleBySymbol = `-- name: GetLastCandleBySymbol :one
+SELECT id, symbol, open_price, close_price, low_price, high_price, interval, volume, created_at, open_time, close_time, is_closed
+FROM candles
+WHERE symbol = $1
+  AND interval = $2
+ORDER BY open_time DESC
+LIMIT 1
+`
+
+type GetLastCandleBySymbolParams struct {
+	Symbol   string
+	Interval string
+}
+
+func (q *Queries) GetLastCandleBySymbol(ctx context.Context, arg GetLastCandleBySymbolParams) (Candle, error) {
+	row := q.db.QueryRow(ctx, getLastCandleBySymbol, arg.Symbol, arg.Interval)
+	var i Candle
+	err := row.Scan(
+		&i.ID,
+		&i.Symbol,
+		&i.OpenPrice,
+		&i.ClosePrice,
+		&i.LowPrice,
+		&i.HighPrice,
+		&i.Interval,
+		&i.Volume,
+		&i.CreatedAt,
+		&i.OpenTime,
+		&i.CloseTime,
+		&i.IsClosed,
+	)
+	return i, err
+}

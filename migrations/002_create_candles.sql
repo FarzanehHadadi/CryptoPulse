@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS candles
         close_price DECIMAL(18, 8) NOT NULL                         ,
         low_price   DECIMAL(18, 8) NOT NULL                         ,
         high_price  DECIMAL(18, 8) NOT NULL                         ,
-                    interval VARCHAR(10) NOT NULL                   ,
+        interval    VARCHAR(10) NOT NULL                            ,
         volume      DECIMAL(18, 8) NOT NULL                         ,
         created_at  TIMESTAMP NOT NULL DEFAULT NOW()                ,
         open_time   TIMESTAMP NOT NULL                              ,
