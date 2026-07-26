@@ -7,11 +7,19 @@ import (
 )
 
 func (c *Client) GetCandles(ctx context.Context, request exchange.CandleRequest) ([]domain.Candle, error) {
-
-	klines, err := c.client.NewKlinesService().
+	nkc := c.client.NewKlinesService().
 		Symbol(request.Symbol).
 		Interval(request.Interval).
-		Limit(request.Limit).
+		Limit(request.Limit)
+	if request.StartTime != nil {
+		nkc.StartTime(request.StartTime.UnixMilli())
+	}
+
+	if request.EndTime != nil {
+		nkc.EndTime(request.EndTime.UnixMilli())
+	}
+
+	klines, err := nkc.
 		Do(ctx)
 
 	if err != nil {
@@ -24,4 +32,9 @@ func (c *Client) GetCandles(ctx context.Context, request exchange.CandleRequest)
 		candles = append(candles, mapKlineToCandle(kline, request.Symbol, request.Interval))
 	}
 	return candles, nil
+}
+func (b *Client) Capabilities() exchange.Capabilities {
+	return exchange.Capabilities{
+		MaxCandleLimit: 1000,
+	}
 }

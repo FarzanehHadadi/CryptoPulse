@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"cryptoPulse/internal/backfill"
 	"cryptoPulse/internal/collector"
 	"cryptoPulse/internal/config"
 	"cryptoPulse/internal/database"
@@ -57,7 +58,14 @@ func main() {
 	collectorService := collector.NewService(repo, binanceClient)
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+	backfillService := backfill.NewService(binanceClient, repo.Candles, binanceClient.Capabilities().MaxCandleLimit)
+
 	jobs := scheduler.JobsFromConfig(cfg.Scheduler) // or inline map
+	for _, job := range jobs {
+		if err := backfillService.Run(ctx, job.CandleRequest); err != nil {
+			logger.Error("Backfill failed", "job", job.Name, "error", err)
+		}
+	}
 	sched := scheduler.NewScheduler(collectorService, jobs, cfg.Scheduler.Workers)
 	if err := sched.Start(ctx); err != nil && err != context.Canceled {
 		logger.Error("scheduler stopped", "error", err)
