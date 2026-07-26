@@ -45,6 +45,8 @@ func (s *Service) Run(ctx context.Context, req exchange.CandleRequest) error {
 	missingRange := s.resolver.Resolve(lastCandleTime, time.Now(), parsedInterval)
 	//get missing time and send it to strategy
 	requests := s.planner.Plan(req, missingRange, parsedInterval)
+
+	logger.Info("adding candles ... ")
 	for _, req := range requests {
 		candles, err := s.exchange.GetCandles(ctx, req)
 
@@ -54,7 +56,7 @@ func (s *Service) Run(ctx context.Context, req exchange.CandleRequest) error {
 		if err := s.repo.CreateCandles(ctx, candles); err != nil {
 			return err
 		}
-		logger.Info("candles added:", candles)
 	}
+	logger.Info("candles added successfully ")
 	return nil
 }

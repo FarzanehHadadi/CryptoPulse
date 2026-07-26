@@ -66,9 +66,12 @@ func main() {
 			logger.Error("Backfill failed", "job", job.Name, "error", err)
 		}
 	}
+	logger.Info("Backfill phase completed successfully")
+	logger.Info("Scheduler is starting ...")
 	sched := scheduler.NewScheduler(collectorService, jobs, cfg.Scheduler.Workers)
 	if err := sched.Start(ctx); err != nil && err != context.Canceled {
 		logger.Error("scheduler stopped", "error", err)
 	}
+	logger.Info("Scheduler completed ...")
 
 }
