@@ -113,3 +113,70 @@ func (b *CreateCandlesBatchResults) Close() error {
 	b.closed = true
 	return b.br.Close()
 }
+
+const createIndicators = `-- name: CreateIndicators :batchexec
+INSERT INTO indicators (
+    symbol,
+    interval,
+    indicator_name,
+    period,
+    candle_time,
+    value
+)
+VALUES ($1, $2, $3, $4, $5, $6)
+ON CONFLICT (symbol, interval, indicator_name, period, candle_time)
+DO NOTHING
+`
+
+type CreateIndicatorsBatchResults struct {
+	br     pgx.BatchResults
+	tot    int
+	closed bool
+}
+
+type CreateIndicatorsParams struct {
+	Symbol        string
+	Interval      string
+	IndicatorName string
+	Period        pgtype.Int4
+	CandleTime    pgtype.Timestamptz
+	Value         pgtype.Numeric
+}
+
+func (q *Queries) CreateIndicators(ctx context.Context, arg []CreateIndicatorsParams) *CreateIndicatorsBatchResults {
+	batch := &pgx.Batch{}
+	for _, a := range arg {
+		vals := []interface{}{
+			a.Symbol,
+			a.Interval,
+			a.IndicatorName,
+			a.Period,
+			a.CandleTime,
+			a.Value,
+		}
+		batch.Queue(createIndicators, vals...)
+	}
+	br := q.db.SendBatch(ctx, batch)
+	return &CreateIndicatorsBatchResults{br, len(arg), false}
+}
+
+func (b *CreateIndicatorsBatchResults) Exec(f func(int, error)) {
+	defer b.br.Close()
+	for t := 0; t < b.tot; t++ {
+		if b.closed {
+			if f != nil {
+				f(t, ErrBatchAlreadyClosed)
+			}
+			continue
+		}
+		_, err := b.br.Exec()
+		if f != nil {
+			f(t, err)
+		}
+	}
+}
+
+func (b *CreateIndicatorsBatchResults) Close() error {
+	b.closed = true
+	return b.br.Close()
+}

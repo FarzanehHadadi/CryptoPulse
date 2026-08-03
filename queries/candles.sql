@@ -40,3 +40,15 @@ WHERE symbol = $1
   AND interval = $2
 ORDER BY open_time DESC
 LIMIT 1;
+
+-- name: GetCandlesBySymbol :many
+SELECT id, symbol, open_price, close_price, low_price, high_price, interval, volume, created_at, open_time, close_time, is_closed
+FROM (
+    SELECT *
+    FROM candles
+    WHERE symbol = $1
+      AND interval = $2
+    ORDER BY open_time DESC
+    LIMIT $3
+) AS recent
+ORDER BY open_time ASC;

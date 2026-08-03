@@ -23,6 +23,17 @@ type Candle struct {
 	IsClosed   bool
 }
 
+type Indicator struct {
+	ID            int64
+	Symbol        string
+	Interval      string
+	IndicatorName string
+	Period        pgtype.Int4
+	CandleTime    pgtype.Timestamptz
+	Value         pgtype.Numeric
+	CreatedAt     pgtype.Timestamptz
+}
+
 type Symbol struct {
 	ID         int64
 	Exchange   string

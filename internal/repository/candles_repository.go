@@ -4,10 +4,9 @@ import (
 	"context"
 	"cryptoPulse/internal/db"
 	"cryptoPulse/internal/domain"
+	"cryptoPulse/internal/repository/mapper"
 
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/shopspring/decimal"
 )
 
 type candlesRepository struct {
@@ -23,22 +22,7 @@ func NewCandlesRepository(queries *db.Queries, db *pgxpool.Pool) *candlesReposit
 }
 
 func (r *candlesRepository) CreateCandles(ctx context.Context, candles []domain.Candle) error {
-	params := make([]db.CreateCandlesParams, 0, len(candles))
-	for _, c := range candles {
-		params = append(params, db.CreateCandlesParams{
-			Symbol:     c.Symbol,
-			OpenPrice:  decimalToNumeric(c.Open),
-			ClosePrice: decimalToNumeric(c.Close),
-			LowPrice:   decimalToNumeric(c.Low),
-			HighPrice:  decimalToNumeric(c.High),
-			Interval:   c.Interval,
-			Volume:     decimalToNumeric(c.Volume),
-			OpenTime:   pgtype.Timestamp{Time: c.OpenTime, Valid: true},
-			CloseTime:  pgtype.Timestamp{Time: c.CloseTime, Valid: true},
-			IsClosed:   true,
-		})
-	}
-	batch := r.query.CreateCandles(ctx, params)
+	batch := r.query.CreateCandles(ctx, mapper.DomainCandlesToCreateParams(candles))
 	var batchErr error
 	batch.Exec(func(i int, err error) {
 		if err != nil {
@@ -46,11 +30,6 @@ func (r *candlesRepository) CreateCandles(ctx context.Context, candles []domain.
 		}
 	})
 	return batchErr
-}
-func decimalToNumeric(d decimal.Decimal) pgtype.Numeric {
-	var n pgtype.Numeric
-	_ = n.Scan(d.String())
-	return n
 }
 
 func (r *candlesRepository) GetLastCandleBySymbol(ctx context.Context, symbol string, interval string) (*domain.Candle, error) {
@@ -61,50 +40,26 @@ func (r *candlesRepository) GetLastCandleBySymbol(ctx context.Context, symbol st
 	if err != nil {
 		return nil, err
 	}
-	open, err := numericToDecimal(candle.OpenPrice)
+	mapped, err := mapper.DbCandleToDomain(candle)
 	if err != nil {
 		return nil, err
 	}
-	high, err := numericToDecimal(candle.HighPrice)
-	if err != nil {
-		return nil, err
-	}
-	low, err := numericToDecimal(candle.LowPrice)
-	if err != nil {
-		return nil, err
-	}
-	closePrice, err := numericToDecimal(candle.ClosePrice)
-	if err != nil {
-		return nil, err
-	}
-	volume, err := numericToDecimal(candle.Volume)
-	if err != nil {
-		return nil, err
-	}
-	return &domain.Candle{
-		ID:        candle.ID,
-		Symbol:    candle.Symbol,
-		Interval:  candle.Interval,
-		Open:      open,
-		High:      high,
-		Low:       low,
-		Close:     closePrice,
-		Volume:    volume,
-		OpenTime:  candle.OpenTime.Time,
-		CloseTime: candle.CloseTime.Time,
-	}, nil
+	return &mapped, nil
 }
-func numericToDecimal(n pgtype.Numeric) (decimal.Decimal, error) {
-	if !n.Valid {
-		return decimal.Zero, nil
+
+func (r *candlesRepository) GetCandlesBySymbol(ctx context.Context, symbol string, interval string, count int) ([]domain.Candle, error) {
+	if count <= 0 {
+		return []domain.Candle{}, nil
 	}
-	v, err := n.Value()
+
+	rows, err := r.query.GetCandlesBySymbol(ctx, db.GetCandlesBySymbolParams{
+		Symbol:   symbol,
+		Interval: interval,
+		Limit:    int32(count),
+	})
 	if err != nil {
-		return decimal.Zero, err
+		return nil, err
 	}
-	s, ok := v.(string)
-	if !ok {
-		return decimal.Zero, nil
-	}
-	return decimal.NewFromString(s)
+
+	return mapper.DbCandlesToDomain(rows)
 }

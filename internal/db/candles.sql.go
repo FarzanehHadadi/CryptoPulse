@@ -9,6 +9,58 @@ import (
 	"context"
 )
 
+const getCandlesBySymbol = `-- name: GetCandlesBySymbol :many
+SELECT id, symbol, open_price, close_price, low_price, high_price, interval, volume, created_at, open_time, close_time, is_closed
+FROM (
+    SELECT id, symbol, open_price, close_price, low_price, high_price, interval, volume, created_at, open_time, close_time, is_closed
+    FROM candles
+    WHERE symbol = $1
+      AND interval = $2
+    ORDER BY open_time DESC
+    LIMIT $3
+) AS recent
+ORDER BY open_time ASC
+`
+
+type GetCandlesBySymbolParams struct {
+	Symbol   string
+	Interval string
+	Limit    int32
+}
+
+func (q *Queries) GetCandlesBySymbol(ctx context.Context, arg GetCandlesBySymbolParams) ([]Candle, error) {
+	rows, err := q.db.Query(ctx, getCandlesBySymbol, arg.Symbol, arg.Interval, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Candle
+	for rows.Next() {
+		var i Candle
+		if err := rows.Scan(
+			&i.ID,
+			&i.Symbol,
+			&i.OpenPrice,
+			&i.ClosePrice,
+			&i.LowPrice,
+			&i.HighPrice,
+			&i.Interval,
+			&i.Volume,
+			&i.CreatedAt,
+			&i.OpenTime,
+			&i.CloseTime,
+			&i.IsClosed,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getLastCandleBySymbol = `-- name: GetLastCandleBySymbol :one
 SELECT id, symbol, open_price, close_price, low_price, high_price, interval, volume, created_at, open_time, close_time, is_closed
 FROM candles

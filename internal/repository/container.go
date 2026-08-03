@@ -8,7 +8,8 @@ import (
 
 func NewRepository(queries *db.Queries, db *pgxpool.Pool) *Repository {
 	return &Repository{
-		Symbols: NewSymbolsRepository(queries),
-		Candles: NewCandlesRepository(queries, db),
+		Symbols:    NewSymbolsRepository(queries),
+		Candles:    NewCandlesRepository(queries, db),
+		Indicators: NewIndicatorsRepository(queries, db),
 	}
 }
